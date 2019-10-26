@@ -1,8 +1,11 @@
 let express = require('express');
 const axios = require('axios');
 const STEAM_API = require("./steamapi");
+const cors = require("cors");
 
-let app = express();
+const app = express();
+app.use(cors());
+
 const GAMES_URL = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/";
 const VANITY_URL = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/";
 

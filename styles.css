@@ -2,7 +2,13 @@ body {
     font-family: "Motiva Sans", Sans-serif;
     font-size: 16px;
     padding: 20px 100px 0px 100px;
-    background: #f3f3f3;
+    background: #1b2838;
+    color: white;
+    text-align: center;
+}
+
+#app{
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 button {
@@ -16,16 +22,41 @@ textarea {
     height: 100px;
 }
 
-.commentTimestamp {
-    font-size: 14px;
+#userForm {
+    text-align: center;
+}
+
+input, button {
+    margin: 10px;
+}
+
+#gameTable {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-column-gap: 10px;
+    grid-row-gap: 10px;
+}
+
+#gameTable .gameTile {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+#gameTable .gameTile img {
+    float: left;
+}
+
+.error {
+    color: #a94847;
 }
 
 footer {
     text-align: center;
-    background-color: #330505;
+    background-color: #171a21;
     color: white;
     padding: 0.5em;
     width: 100%;
+    position: fixed;
+    bottom: 0;
 }
 
 footer a {

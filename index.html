@@ -1,21 +1,37 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <link rel="stylesheet" href="styles.css" />
-  <title>Steam Games Browser</title>
+    <link rel="stylesheet" href="styles.css" />
+    <title>Steam Games Browser</title>
 </head>
-
 <body>
-  <div id="app">
-    <br><br><br><br>
-    <footer>
-      <p>Github repository: <a href="https://github.com/xaque/cs260-creative3">xaque/cs260-creative3</a></p>
-    </footer>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.2/dist/vue.js"></script>
-  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-  <script src="script.js"></script>
+    <div id="app">
+        <br><br>
+        <form id="userForm" v-on:submit.prevent="userSubmit">
+            <input v-model="vanityurl" placeholder="vanity URL">
+            <br>
+            <button type="submit">Search</button>
+        </form>
+        <p class="error" v-if="userNotFound">Steam profile not found.</p>
+        <p v-if="validid"><b>Selected User</b></p>
+        <p v-if="validid">STEAMID: {{steamid}}</p>
+        <form id="gamesForm" v-if="validid" v-on:submit.prevent="gamesSubmit">
+            <button type=submit>Get Library</button>
+        </form>
+        <p class="error" v-if="profilePrivate">Steam profile is private!</p>
+        <div id="gameTable" v-if="!profilePrivate">
+            <div class="gameTile" v-for="game in games">
+                <img v-bind:src="'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/' + game.appid + '/' + game.img_logo_url + '.jpg'" />
+                <p>{{game.name}}</p>
+            </div>
+        </div>
+        <br><br>
+        <footer>
+            <p>Github repository: <a href="https://github.com/xaque/cs260-creative3">xaque/cs260-creative3</a></p>
+        </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.2/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="script.js"></script>
 </body>
-
 </html>
