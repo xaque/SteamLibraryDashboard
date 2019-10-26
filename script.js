@@ -6,42 +6,49 @@ let app = new Vue({
       steamid: "",
       validid: false,
       profilePrivate: false,
+      profileRetrieved: false,
+      user: {},
       games: [],
-      numGames: 0,
       sortedBy: "title",
       achievementData: {},
   },
   computed: {
-  },
-  watch: {
+    numGames() {
+      return this.games.length
+    }
   },
   methods: {
       async userSubmit() {
           try {
-              this.profilePrivate = false
-              this.games = []
-              this.numGames = 0
               const response = await axios.get("http://xaque.net:4200/resolveVanity?vanityurl=" + this.vanityurl)
-              let success = response.data.response.success
-              if (success != 1){
-                  //TODO Something
-                  this.steamid = ""
-                  this.validid = false
+              this.clearUserData()
+              if (response.data.response.success != 1){
                   this.userNotFound = true
                   return
               }
-              this.userNotFound = false
               this.validid = true
               this.steamid = response.data.response.steamid
           }
           catch(error) {
-              this.userNotFound = false
-              this.validid = false
-              this.steamid = ""
+              console.log(error)
+          }
+      },
+      async getUser() {
+        try {
+              const response = await axios.get("http://xaque.net:4200/getUserProfile?steamid=" + this.steamid)
+              this.user = response.data.user
+              this.profileRetrieved = true;
+          }
+          catch(error) {
               console.log(error)
           }
       },
       async gamesSubmit() {
+        await this.userSubmit()
+        if (!this.validid){
+          return
+        }
+        this.getUser()
           try {
               const response = await axios.get("http://xaque.net:4200/getSteamGames?steamid=" + this.steamid)
               if (Object.entries(response.data.response).length === 0 && response.data.response.constructor === Object){
@@ -49,19 +56,14 @@ let app = new Vue({
                   return;
               }
               this.profilePrivate = false
-              this.numGames = response.data.response.game_count
               this.games = response.data.response.games.sort((a, b) => a.name.localeCompare(b.name))
               this.sortedBy = "title"
               let promises = this.games.map(game => this.getAchievements(game.appid))
               Promise.all(promises).then(values => {
                   this.$forceUpdate()
               })
-              // this.games.forEach(game => {
-              //     this.getAchievements(game.appid)
-              // })
           }
           catch(error) {
-              //this.profilePrivate = true
               console.log(error)
           }
       },
@@ -69,7 +71,7 @@ let app = new Vue({
           appid = appid.toString()
           try {
               const response = await axios.get("http://xaque.net:4200/getGameAchievements?steamid=" + this.steamid + "&appid=" + appid)
-              if (response.data.playerstats.success == false){
+              if (response.data.playerstats.success == false || response.data.playerstats.achievements == undefined){
                   this.achievementData[appid] = [{
                       apiname: "NoAchievements",
                       achieved: 0,
@@ -77,12 +79,7 @@ let app = new Vue({
                   }]
                   return
               }
-              if (response.data.playerstats.achievements == undefined){
-                  //Game has no achievements
-                  return
-              }
               this.achievementData[appid] = Object.values(response.data.playerstats.achievements)
-              //this.$forceUpdate()
           }
           catch(error) {
               console.log(error)
@@ -117,5 +114,15 @@ let app = new Vue({
           let achieved = this.achievementData[appid].filter(achievement => achievement.achieved == 1).length
           return achieved / total * 100
       },
+      clearUserData() {
+          this.userNotFound = false
+          this.steamid = ""
+          this.validid = false
+          this.profilePrivate = false
+          this.games = []
+          this.achievementData = {}
+          this.user = {}
+          this.profileRetrieved = false;
+      }
   }
 });

@@ -8,29 +8,34 @@
     <div id="app">
         <br>
         <h1>Steam Library Browser</h1>
-        <form id="userForm" v-on:submit.prevent="userSubmit">
-            <input v-model="vanityurl" placeholder="vanity URL">
-            <br>
+        <form id="userForm" v-on:submit.prevent="gamesSubmit">
+            <input v-model="vanityurl" placeholder="Steam User (vanity URL)">
+            <p style="font-size: 0.8em"><i>Hint: try "farts" or "Lobosjr"</i></p>
             <button type="submit">Search</button>
         </form>
         <p class="error" v-if="userNotFound">Steam profile not found.</p>
-        <p v-if="validid"><b>Selected User</b></p>
-        <p v-if="validid">STEAMID: {{steamid}}</p>
-        <form id="gamesForm" v-if="validid" v-on:submit.prevent="gamesSubmit">
-            <button type=submit>Get Library</button>
-        </form>
+        <br>
+        <div v-if="profileRetrieved" class="userCard">
+            <div id="avatar"><a v-bind:href="user.profileurl"><img v-bind:src="user.avatarfull"/></a></div>
+            <h2>{{user.personaname}}</h2>
+            <h3><i>"{{user.realname}}"</i></h3>
+            <p>STEAMID: {{steamid}}</p>
+            <p>Logged on: {{user.personastate == 1 ? "Yes" : "No"}}</p>
+        </div>
         <br>
         <p class="error" v-if="profilePrivate">Steam profile is private!</p>
         <p v-if="!profilePrivate && games.length > 0">Found {{numGames}} games!</p>
         <table id="gameTable" v-if="!profilePrivate && games.length > 0">
-            <tr>
+            <tr class="gameTile tableHeading">
                 <th v-on:click="sort('appid')" width="10%"><img src="transparent.png" /></th>
-                <th v-on:click="sort('title')" width="70%">Title</th>
+                <th v-on:click="sort('appid')" width="5%">AppID</th>
+                <th v-on:click="sort('title')" width="65%">Title</th>
                 <th v-on:click="sort('playtime')" width="10%">Playtime</th>
                 <th v-on:click="sort('achievments')" width="10%">Achievements</th>
             </tr>
             <tr class="gameTile" v-for="game in games">
                 <td><a v-bind:href="'https://store.steampowered.com/app/' + game.appid"><img v-bind:src="'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/' + game.appid + '/' + game.img_logo_url + '.jpg'" /></a></td>
+                <td>{{game.appid}}</td>
                 <td>{{game.name}}</td>
                 <td>{{(game.playtime_forever / 60).toFixed(2)}} hrs</td>
                 <td>{{ percentComplete(game.appid) == "loading" ? "loading..." : (percentComplete(game.appid)).toFixed(2) + "%"}}</td>

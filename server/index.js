@@ -9,6 +9,7 @@ app.use(cors());
 const GAMES_URL = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/";
 const VANITY_URL = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/";
 const ACHIEVEMENTS_URL = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/";
+const USER_URL = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/";
 
 let GAME_REQUEST = {
     key: STEAM_API.KEY,
@@ -29,6 +30,11 @@ let ACHIEVEMENTS_REQUEST = {
     steamid: ""
 };
 
+let USER_REQUEST = {
+    key: STEAM_API.KEY,
+    steamids: ""
+};
+
 app.get('/getSteamGames', function (req, res) {
     let request = GAME_REQUEST;
     request.steamid = req.query.steamid;
@@ -45,6 +51,26 @@ app.get('/resolveVanity', function (req, res) {
     request.vanityurl = req.query.vanityurl;
     axios.get(VANITY_URL, {params: request}).then(response => {
         res.send(response.data);
+    }).catch(error => {
+        res.status(400);
+        res.send(JSON.stringify(error, null, "\t"));
+    });
+})
+
+app.get('/getUserProfile', function (req, res) {
+    let request = USER_REQUEST;
+    request.steamids = req.query.steamid;
+    axios.get(USER_URL, {params: request}).then(response => {
+        if (response.data.response.players.length == 0){
+            res.status(400);
+            res.send({
+                user: {}
+            })
+            return
+        }
+        res.send({
+            user: response.data.response.players[0]
+        });
     }).catch(error => {
         res.status(400);
         res.send(JSON.stringify(error, null, "\t"));

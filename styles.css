@@ -30,11 +30,40 @@ input, button {
     margin: 10px;
 }
 
+.userCard {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+    grid-row-gap: 0;
+    width: 50%;
+    margin: auto;
+    background-color: rgba(0, 0, 0, 0.2);
+    text-align: left;
+}
+
+.userCard #avatar {
+    grid-column: 1;
+    grid-row: 1 / -1;
+}
+
+.userCard p, .userCard h2, .userCard h3 {
+    margin: 0;
+}
+
 #gameTable {
     display: grid;
     grid-template-columns: 1fr;
     grid-column-gap: 10px;
     grid-row-gap: 10px;
+}
+
+#gameTable .tableHeading {
+    text-align: center;
+    float: none;
+}
+
+#gameTable .tableHeading th:hover {
+    background-color: rgba(0, 0, 0, 0.25);
 }
 
 #gameTable .gameTile {
