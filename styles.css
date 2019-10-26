@@ -1,0 +1,37 @@
+body {
+    font-family: "Motiva Sans", Sans-serif;
+    font-size: 16px;
+    padding: 20px 100px 0px 100px;
+    background: #f3f3f3;
+}
+
+button {
+    font-family: "Motiva Sans", Sans-serif;
+    font-size: 1em;
+}
+
+textarea {
+    width: 100%;
+    max-width: 500px;
+    height: 100px;
+}
+
+.commentTimestamp {
+    font-size: 14px;
+}
+
+footer {
+    text-align: center;
+    background-color: #330505;
+    color: white;
+    padding: 0.5em;
+    width: 100%;
+}
+
+footer a {
+    color: white;
+}
+
+footer a:hover {
+    color: #ccc;
+}
