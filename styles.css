@@ -32,7 +32,7 @@ input, button {
 
 #gameTable {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr;
     grid-column-gap: 10px;
     grid-row-gap: 10px;
 }
@@ -43,6 +43,19 @@ input, button {
 
 #gameTable .gameTile img {
     float: left;
+}
+
+#gameTable td, #gameTable th {
+    padding: 10px;
+}
+
+.gameTile {
+    text-align: left;
+}
+
+.gameTitle img {
+    width: auto;
+    max-width: 184px;
 }
 
 .error {

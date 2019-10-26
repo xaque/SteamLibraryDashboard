@@ -8,6 +8,7 @@ app.use(cors());
 
 const GAMES_URL = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/";
 const VANITY_URL = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/";
+const ACHIEVEMENTS_URL = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/";
 
 let GAME_REQUEST = {
     key: STEAM_API.KEY,
@@ -22,13 +23,20 @@ let VANITY_REQUEST = {
     vanityurl: "",
 };
 
+let ACHIEVEMENTS_REQUEST = {
+    key: STEAM_API.KEY,
+    appid: "",
+    steamid: ""
+};
+
 app.get('/getSteamGames', function (req, res) {
     let request = GAME_REQUEST;
     request.steamid = req.query.steamid;
     axios.get(GAMES_URL, {params: request}).then(response => {
         res.send(response.data);
     }).catch(error => {
-        res.end(JSON.stringify(error, null, "\t"));
+        res.status(400);
+        res.send(JSON.stringify(error, null, "\t"));
     });
 })
 
@@ -38,7 +46,30 @@ app.get('/resolveVanity', function (req, res) {
     axios.get(VANITY_URL, {params: request}).then(response => {
         res.send(response.data);
     }).catch(error => {
-        res.end(JSON.stringify(error, null, "\t"));
+        res.status(400);
+        res.send(JSON.stringify(error, null, "\t"));
+    });
+})
+
+app.get('/getGameAchievements', function (req, res) {
+    let request = ACHIEVEMENTS_REQUEST;
+    request.appid = req.query.appid;
+    request.steamid = req.query.steamid;
+    axios.get(ACHIEVEMENTS_URL, {params: request}).then(response => {
+        res.send(response.data);
+    }).catch(error => {
+        if (error.message == "Request failed with status code 400"){
+            // No achievments
+            res.send({
+                playerstats: {
+                    error: "Requested app has no stats",
+                    success: false
+                }
+            })
+            return
+        }
+        res.status(400);
+        res.send(JSON.stringify(error, null, "\t"));
     });
 })
 

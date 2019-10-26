@@ -2,11 +2,12 @@
 <html>
 <head>
     <link rel="stylesheet" href="styles.css" />
-    <title>Steam Games Browser</title>
+    <title>Steam Library Browser</title>
 </head>
 <body>
     <div id="app">
-        <br><br>
+        <br>
+        <h1>Steam Library Browser</h1>
         <form id="userForm" v-on:submit.prevent="userSubmit">
             <input v-model="vanityurl" placeholder="vanity URL">
             <br>
@@ -18,14 +19,24 @@
         <form id="gamesForm" v-if="validid" v-on:submit.prevent="gamesSubmit">
             <button type=submit>Get Library</button>
         </form>
+        <br>
         <p class="error" v-if="profilePrivate">Steam profile is private!</p>
-        <div id="gameTable" v-if="!profilePrivate">
-            <div class="gameTile" v-for="game in games">
-                <img v-bind:src="'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/' + game.appid + '/' + game.img_logo_url + '.jpg'" />
-                <p>{{game.name}}</p>
-            </div>
-        </div>
-        <br><br>
+        <p v-if="!profilePrivate && games.length > 0">Found {{numGames}} games!</p>
+        <table id="gameTable" v-if="!profilePrivate && games.length > 0">
+            <tr>
+                <th v-on:click="sort('appid')" width="10%"><img src="transparent.png" /></th>
+                <th v-on:click="sort('title')" width="70%">Title</th>
+                <th v-on:click="sort('playtime')" width="10%">Playtime</th>
+                <th v-on:click="sort('achievments')" width="10%">Achievements</th>
+            </tr>
+            <tr class="gameTile" v-for="game in games">
+                <td><a v-bind:href="'https://store.steampowered.com/app/' + game.appid"><img v-bind:src="'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/' + game.appid + '/' + game.img_logo_url + '.jpg'" /></a></td>
+                <td>{{game.name}}</td>
+                <td>{{(game.playtime_forever / 60).toFixed(2)}} hrs</td>
+                <td>{{ percentComplete(game.appid) == "loading" ? "loading..." : (percentComplete(game.appid)).toFixed(2) + "%"}}</td>
+            </tr>
+        </table>
+        <br><br><br><br>
         <footer>
             <p>Github repository: <a href="https://github.com/xaque/cs260-creative3">xaque/cs260-creative3</a></p>
         </footer>
