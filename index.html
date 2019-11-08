@@ -29,21 +29,23 @@
             <tr class="gameTile tableHeading">
                 <th v-on:click="sort('appid')" width="10%"><img src="transparent.png" /></th>
                 <th v-on:click="sort('appid')" width="5%">AppID</th>
-                <th v-on:click="sort('title')" width="65%">Title</th>
+                <th v-on:click="sort('title')" width="45%">Title</th>
                 <th v-on:click="sort('playtime')" width="10%">Playtime</th>
+                <th v-on:click="sort('hltb')" width="10%">How Long To Beat</th>
                 <th v-on:click="sort('achievments')" width="10%">Achievements</th>
             </tr>
             <tr class="gameTile" v-for="game in games">
                 <td><a v-bind:href="'https://store.steampowered.com/app/' + game.appid"><img v-bind:src="'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/' + game.appid + '/' + game.img_logo_url + '.jpg'" /></a></td>
                 <td>{{game.appid}}</td>
                 <td>{{game.name}}</td>
-                <td>{{(game.playtime_forever / 60).toFixed(2)}} hrs</td>
-                <td>{{ percentComplete(game.appid) == "loading" ? "loading..." : (percentComplete(game.appid)).toFixed(2) + "%"}}</td>
+                <td>{{(game.playtime_forever / 60).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 1})}} hrs</td>
+                <td><a v-bind:href="'https://howlongtobeat.com/game.php?id=' + game.hltbid">{{game.hltb == "loading..." ? game.hltb : game.hltb + " hrs"}}</a></td>
+                <td>{{ game.percentComplete == "loading..." ? game.percentComplete : game.percentComplete + "%"}}</td>
             </tr>
         </table>
         <br><br><br><br>
         <footer>
-            <p>Github repository: <a href="https://github.com/xaque/cs260-creative3">xaque/cs260-creative3</a></p>
+            <p>Github repository: <a href="https://github.com/xaque/cs260-creative4">xaque/cs260-creative4</a></p>
         </footer>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.2/dist/vue.js"></script>

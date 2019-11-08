@@ -10,7 +10,6 @@ let app = new Vue({
         user: {},
         games: [],
         sortedBy: "title",
-        achievementData: {},
     },
     computed: {
         numGames() {
@@ -56,30 +55,36 @@ let app = new Vue({
                     return;
                 }
                 this.profilePrivate = false
-                this.games = response.data.response.games.sort((a, b) => a.name.localeCompare(b.name))
+                let games = response.data.response.games.sort((a, b) => a.name.localeCompare(b.name))
                 this.sortedBy = "title"
-                let promises = this.games.map(game => this.getAchievements(game.appid))
-                Promise.all(promises).then(values => {
-                    this.$forceUpdate()
+                games.forEach(game => {
+                    game.hltb = "loading..."
+                    game.percentComplete = "loading..."
+                    this.getHLTB(game)
+                    this.getAchievements(game)
                 })
+                this.games = games
             }
             catch(error) {
                 console.log(error)
             }
         },
-        async getAchievements(appid) {
-            appid = appid.toString()
+        async getAchievements(game) {
+            let appid = game.appid.toString()
             try {
                 const response = await axios.get("http://xaque.net:4200/getGameAchievements?steamid=" + this.steamid + "&appid=" + appid)
                 if (response.data.playerstats.success == false || response.data.playerstats.achievements == undefined){
-                    this.achievementData[appid] = [{
-                        apiname: "NoAchievements",
-                        achieved: 0,
-                        unlocktime: 0
-                    }]
+                    game.achievements = []
+                    game.percentComplete = "--"
                     return
                 }
-                this.achievementData[appid] = Object.values(response.data.playerstats.achievements)
+                game.achievements = Object.values(response.data.playerstats.achievements)
+                let total = game.achievements.length
+                let achieved = game.achievements.filter(achievement => achievement.achieved == 1).length
+                game.percentComplete = (achieved / total * 100).toLocaleString('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                });
             }
             catch(error) {
                 console.log(error)
@@ -97,22 +102,108 @@ let app = new Vue({
                 this.games.sort((a,b) => b.playtime_forever - a.playtime_forever)
             }
             else if (by == "achievments"){
-                this.games.sort((a,b) => this.percentComplete(b.appid) - this.percentComplete(a.appid))
+                this.games.sort((a,b) => {
+                    let apc = a.percentComplete
+                    let bpc = b.percentComplete
+                    if (!(apc >= 0)){
+                        apc = -1
+                    }
+                    if (!(bpc >= 0)){
+                        bpc = -1
+                    }
+                    return bpc - apc
+                })
+            }
+            else if (by == "hltb"){
+                this.games.sort((a,b) => {
+                    let apc = a.hltb
+                    let bpc = b.hltb
+                    if (!(apc >= 0)){
+                        apc = -1
+                    }
+                    if (!(bpc >= 0)){
+                        bpc = -1
+                    }
+                    return bpc - apc
+                })
             }
             else{
                 this.games.sort((a,b) => b[by] - a[by])
             }
             this.sortedBy = by
         },
-        percentComplete(appid) {
-            appid = appid.toString()
-            if (this.achievementData[appid] == undefined){
-                return "loading"
+        async getHLTB(game){
+            try {
+                //Remove registered and trademark symbols from the title
+                //Replace semicolons with &amp;
+                let searchName = game.name.replace(/[™]/g, " ").replace(/[®]/g, " ").replace(/[;]/g, "&amp;")
+                let response = await axios.get("http://xaque.net:4200/getHLTB?game=" + searchName)
+                let playtime = response.data.gameplayMainExtra
+                if (playtime != undefined){
+                    game.hltbid = response.data.id
+                    game.hltb = playtime
+                    return
+                }
+                
+                // No result found so try altering the search
+                
+                if (searchName.includes("/")){
+                    // "Resident Evil 0 / biohazard 0" becomes "Resident Evil 0"
+                    searchName = searchName.split("/")[0]
+                }
+                // Remove parentheses from title
+                else if (searchName.includes("(")){
+                    searchName = searchName.split("(")[0] + searchName.split(")")[1]
+                }
+                // Remove edition from title
+                else if (searchName.toLowerCase().includes("edition")){
+                    // Remove "Edition" and preceding word
+                    let newName = []
+                    for (let word of searchName.toLowerCase().split(" ")){
+                        if (word.includes("edition")){
+                            newName.pop()
+                            break;
+                        }
+                        newName.push(word)
+                    }
+                    // Remove any trailing punctuation
+                    searchName = newName.join(" ").trim()
+                    if (searchName.endsWith(":") || searchName.endsWith("-")){
+                        searchName = searchName.slice(0, -1);
+                    }
+                }
+                // Remove subtitles
+                else if (searchName.includes(":")){
+                    searchName = searchName.split(":")[0]
+                }
+                else if (searchName.includes("-")){
+                    searchName = searchName.split("-")[0]
+                }
+                // Remove remastered
+                else if (searchName.toLowerCase().includes("remastered")){
+                    searchName = searchName.toLowerCase().replace("remastered", "")
+                }
+                // Remove misc special characters
+                else {
+                    searchName = searchName.replace(/[^a-zA-Z0-9.()!?@#$%^&*; ]/g, " ")
+                }
+                // Remove elipsis
+                searchName = searchName.replace(/[(...)]/g, " ")
+                // Remove dash and colon
+                searchName = searchName.replace(/[-:]/g, " ")
+                // Try the search again
+                response = await axios.get("http://xaque.net:4200/getHLTB?game=" + searchName)
+                playtime = response.data.gameplayMainExtra
+                if (playtime == undefined){
+                    game.hltbid = ""
+                    playtime = "--"
+                }
+                game.hltb = playtime
+                game.hltbid = response.data.id
             }
-            appid = appid.toString()
-            let total = this.achievementData[appid].length
-            let achieved = this.achievementData[appid].filter(achievement => achievement.achieved == 1).length
-            return achieved / total * 100
+            catch(error) {
+                console.log(error)
+            }
         },
         clearUserData() {
             this.userNotFound = false
@@ -120,7 +211,6 @@ let app = new Vue({
             this.validid = false
             this.profilePrivate = false
             this.games = []
-            this.achievementData = {}
             this.user = {}
             this.profileRetrieved = false;
         }
