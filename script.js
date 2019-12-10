@@ -19,7 +19,7 @@ let app = new Vue({
     methods: {
         async userSubmit() {
             try {
-                const response = await axios.get("http://xaque.net:4200/resolveVanity?vanityurl=" + this.vanityurl)
+                const response = await axios.get("http://xaque.net:4202/resolveVanity?vanityurl=" + this.vanityurl)
                 this.clearUserData()
                 if (response.data.response.success != 1){
                     this.userNotFound = true
@@ -34,7 +34,7 @@ let app = new Vue({
         },
         async getUser() {
             try {
-                const response = await axios.get("http://xaque.net:4200/getUserProfile?steamid=" + this.steamid)
+                const response = await axios.get("http://xaque.net:4202/getUserProfile?steamid=" + this.steamid)
                 this.user = response.data.user
                 this.profileRetrieved = true;
             }
@@ -49,7 +49,7 @@ let app = new Vue({
             }
             this.getUser()
             try {
-                const response = await axios.get("http://xaque.net:4200/getSteamGames?steamid=" + this.steamid)
+                const response = await axios.get("http://xaque.net:4202/getSteamGames?steamid=" + this.steamid)
                 if (Object.entries(response.data.response).length === 0 && response.data.response.constructor === Object){
                     this.profilePrivate = true
                     return;
@@ -72,7 +72,7 @@ let app = new Vue({
         async getAchievements(game) {
             let appid = game.appid.toString()
             try {
-                const response = await axios.get("http://xaque.net:4200/getGameAchievements?steamid=" + this.steamid + "&appid=" + appid)
+                const response = await axios.get("http://xaque.net:4202/getGameAchievements?steamid=" + this.steamid + "&appid=" + appid)
                 if (response.data.playerstats.success == false || response.data.playerstats.achievements == undefined){
                     game.achievements = []
                     game.percentComplete = "--"
@@ -137,7 +137,7 @@ let app = new Vue({
                 //Remove registered and trademark symbols from the title
                 //Replace semicolons with &amp;
                 let searchName = game.name.replace(/[™]/g, " ").replace(/[®]/g, " ").replace(/[;]/g, "&amp;")
-                let response = await axios.get("http://xaque.net:4200/getHLTB?game=" + searchName)
+                let response = await axios.get("http://xaque.net:4202/getHLTB?game=" + searchName + "&appid=" + game.appid)
                 let playtime = response.data.gameplayMainExtra
                 if (playtime != undefined){
                     game.hltbid = response.data.id
@@ -192,7 +192,7 @@ let app = new Vue({
                 // Remove dash and colon
                 searchName = searchName.replace(/[-:]/g, " ")
                 // Try the search again
-                response = await axios.get("http://xaque.net:4200/getHLTB?game=" + searchName)
+                response = await axios.get("http://xaque.net:4202/getHLTB?game=" + searchName + "&appid=" + game.appid)
                 playtime = response.data.gameplayMainExtra
                 if (playtime == undefined){
                     game.hltbid = ""

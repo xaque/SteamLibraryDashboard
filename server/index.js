@@ -3,6 +3,28 @@ const axios = require('axios');
 const STEAM_API = require("./steamapi");
 const cors = require("cors");
 const hltb = require('howlongtobeat');
+const mongoose = require('mongoose');
+
+// connect to the database
+mongoose.connect('mongodb://localhost:27017/steam', {
+  useNewUrlParser: true
+});
+
+const gameSchema = new mongoose.Schema({
+  appid: Number,
+  steam: Object,
+  hltb: Object,
+});
+
+const achievementSchema = new mongoose.Schema({
+	appid: Number,
+	users: Object,
+	steamid: Number,
+	playerstats: Object,
+});
+
+const Game = mongoose.model('Game', gameSchema);
+const Achievement = mongoose.model('Achievement', achievementSchema);
 
 const hltbService = new hltb.HowLongToBeatService();
 const app = express();
@@ -42,7 +64,11 @@ app.get('/getSteamGames', function (req, res) {
     request.steamid = req.query.steamid;
     axios.get(GAMES_URL, {params: request}).then(response => {
         res.send(response.data);
+        response.data.response.games.forEach(game => {
+        	dbAddGame(game);
+        });
     }).catch(error => {
+    	console.log(error)
         res.status(400);
         res.send(JSON.stringify(error, null, "\t"));
     });
@@ -79,30 +105,58 @@ app.get('/getUserProfile', function (req, res) {
     });
 })
 
-app.get('/getGameAchievements', function (req, res) {
+app.get('/getGameAchievements', async function (req, res) {
     let request = ACHIEVEMENTS_REQUEST;
     request.appid = req.query.appid;
     request.steamid = req.query.steamid;
+    // Try checking DB cache first
+    // try{
+    // 	let a = await Achievement.findOne({appid: request.appid});
+    // 	if (a[request.steamid]){
+	   // 	res.send(a[request.steamid].playerstats);
+	   // 	//console.log("a cache hit");
+	   // 	return;
+    // 	}
+    // } catch (e){}
+    // console.log("a cache miss " + request.appid);
+    // Not in cache, fetch from Steam
     axios.get(ACHIEVEMENTS_URL, {params: request}).then(response => {
         res.send(response.data);
+        //dbAddAchievements(request.appid, request.steamid, response.data.playerstats);
     }).catch(error => {
+    	const fail = {
+    		error: "Requested app has no stats",
+    		success: false,
+    		achievements: [],
+    	};
         if (error.message == "Request failed with status code 400"){
-            // No achievments
+            // No achievements
             res.send({
-                playerstats: {
-                    error: "Requested app has no stats",
-                    success: false
-                }
+                playerstats: fail
             })
-            return
+            //dbAddAchievements(request.appid, request.steamid, fail);
+            return;
         }
+        //dbAddAchievements(request.appid, request.steamid, fail);
         res.status(400);
         res.send(JSON.stringify(error, null, "\t"));
     });
 })
 
-app.get('/getHLTB', function (req, res) {
-    let game = req.query.game
+app.get('/getHLTB', async function (req, res) {
+    let game = req.query.game;
+    let appid = req.query.appid;
+    // Check DB cache first
+    try{
+    	let g = await Game.findOne({appid: appid});
+    	if (Object.keys(g.hltb).length !== 0 || g.hltb.constructor !== Object){
+    		res.send(g.hltb);
+    		//console.log("h cache hit");
+    		return;
+    	}
+    } catch(e){}
+    //console.log("h cache miss");
+    // Not in cache, fetch from hltb
     hltbService.search(game).then(result => {
 		// HLTB matching sucks sometimes.
 		// i.e.
@@ -192,12 +246,54 @@ app.get('/getHLTB', function (req, res) {
 		})
 		if (result.length < 1){
 		    res.send({})
-		    return
+		    dbAddHLTB(appid, {empty: true});
+		    return;
 		}
-		res.send(result[0])
+		res.send(result[0]);
+		dbAddHLTB(appid, result[0]);
 	});
 })
 
-let server = app.listen(4200, function () {
+let server = app.listen(4202, function () {
     console.log("Example app listening at http://%s:%s", server.address().address, server.address().port)
 })
+
+
+async function dbAddGame(steam){
+	const game = new Game({
+		appid: steam.appid,
+		steam: steam,
+		hltb: {},
+	});
+	try{
+		await game.save();
+	} catch (e){
+		//console.log(e);
+	}
+}
+
+async function dbAddHLTB(appid, hltb){
+	try{
+		let game = await Game.findOne({appid: appid});
+		game.hltb = hltb;
+		await game.save();
+	} catch (e){console.log(e)}
+}
+
+// async function dbAddAchievements(appid, steamid, playerstats){
+// 	try{
+// 		let a = await Achievement.findOne({appid: appid});
+// 		a.users[steamid] = playerstats;
+// 		await a.save();
+// 	} catch (e){
+// 		const a = new Achievement({
+// 			appid: appid,
+// 			users: {
+// 				[steamid]: playerstats
+// 			},
+// 		});
+// 		try{
+// 			await a.save();
+// 		} catch (e) {}
+// 	}
+// }
